@@ -25,8 +25,8 @@ $ npm start
 This example illustrates how to build an OAuth 2.0 authorization server that
 supports clients using the web-based authorization code and implicit grants.
 The access tokens issued to clients are bearer tokens, the contents of which are
-encoded in [JSON Web Token](https://datatracker.ietf.org/doc/html/rfc7519) (JWT)
-format and compliant with [RFC 9068](https://datatracker.ietf.org/doc/html/rfc9068).
+encoded in [JSON Web Token](https://jwt.io/) (JWT) format and compliant with
+[RFC 9068](https://datatracker.ietf.org/doc/html/rfc9068).
 
 This app implements sign in and consent functionality.  User interaction is
 performed via HTML pages and forms, which are rendered via [EJS](https://ejs.co/)
