@@ -88,8 +88,8 @@ as.exchange(oauth2orize.exchange.code(function issue(client, code, redirectURI, 
       payload: {
         iss: 'https://server.example.com',
         aud: 'https://api.example.com',
-        sub: row.user_id,
-        client_id: row.client_id,
+        sub: String(row.user_id),
+        client_id: String(row.client_id),
         scope: row.scope,
         iat: Math.floor(now / 1000), // now, in seconds
         exp: Math.floor(now / 1000) + 7200, // 2 hours from now, in seconds

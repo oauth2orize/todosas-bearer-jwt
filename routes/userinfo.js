@@ -1,21 +1,25 @@
 var express = require('express');
 var passport = require('passport');
 var HTTPBearerStrategy = require('passport-http-bearer');
+var jws = require('jws');
 var db = require('../db');
 
 
 passport.use(new HTTPBearerStrategy(function verify(token, cb) {
-  db.get('SELECT * FROM access_tokens WHERE token = ?', [
-    token
-  ], function(err, row) {
-    if (err) { return cb(err); }
-    if (!row) { return cb(null, false); }
-    var user = {
-      id: row.user_id
-    };
-    // TODO: Pass scope as info
-    return cb(null, user);
-  });
+  var now = Math.floor(Date.now() / 1000);
+  var jwt = jws.decode(token, { json: true });
+  if (jwt.payload.iss !== 'https://server.example.com') { return cb(null, false); }
+  if (jwt.payload.aud !== 'https://api.example.com') { return cb(null, false); }
+  if (jwt.payload.exp <= now) { return cb(null, false); }
+  
+  var ok = jws.verify(token, 'HS256', 'has a van');
+  if (!ok) { return cb(null, false); }
+  
+  var user = {
+    id: parseInt(jwt.payload.sub)
+  };
+  // TODO: Pass scope as info
+  return cb(null, user);
 }));
 
 
