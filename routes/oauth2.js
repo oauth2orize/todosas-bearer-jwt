@@ -8,6 +8,8 @@ var async = require('async');
 var url = require('url');
 var qs = require('querystring');
 var crypto = require('crypto');
+var jws = require('jws');
+var uuid = require('uuid').v4;
 var db = require('../db');
 
 
@@ -77,19 +79,25 @@ as.exchange(oauth2orize.exchange.code(function issue(client, code, redirectURI, 
     if (row.client_id !== client.id) { return cb(null, false); }
     if (row.redirect_uri !== redirectURI) { return cb(null, false); }
     
-    crypto.randomBytes(64, function(err, buffer) {
-      if (err) { return cb(err); }
-      var token = buffer.toString('base64');
-      db.run('INSERT INTO access_tokens (user_id, client_id, scope, token) VALUES (?, ?, ?, ?)', [
-        row.user_id,
-        row.client_id,
-        row.scope,
-        token,
-      ], function(err) {
-        if (err) { return cb(err); }
-        return cb(null, token);
-      });
+    var now = Date.now();
+    var token = jws.sign({
+      header: {
+        alg: 'HS256',
+        typ: 'at+jwt'
+      },
+      payload: {
+        iss: 'https://server.example.com',
+        aud: 'https://api.example.com',
+        sub: row.user_id,
+        client_id: row.client_id,
+        scope: row.scope,
+        iat: Math.floor(now / 1000), // now, in seconds
+        exp: Math.floor(now / 1000) + 7200, // 2 hours from now, in seconds
+        jti: uuid()
+      },
+      secret: 'has a van',
     });
+    return cb(null, token);
   });
 }));
 
