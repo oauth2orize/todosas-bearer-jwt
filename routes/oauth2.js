@@ -53,23 +53,6 @@ as.grant(oauth2orize.grant.code(function issue(client, redirectURI, user, ares, 
   });
 }));
 
-as.grant(oauth2orize.grant.token(function issue(client, user, ares, cb) {
-  var grant = ares.grant;
-  
-  crypto.randomBytes(64, function(err, buffer) {
-    if (err) { return cb(err); }
-    var token = buffer.toString('base64');
-    db.run('INSERT INTO access_tokens (user_id, client_id, token) VALUES (?, ?, ?)', [
-      user.id,
-      client.id,
-      token,
-    ], function(err) {
-      if (err) { return cb(err); }
-      return cb(null, token);
-    });
-  });
-}));
-
 as.exchange(oauth2orize.exchange.code(function issue(client, code, redirectURI, cb) {
   db.get('SELECT * FROM authorization_codes WHERE code = ?', [
     code
@@ -98,6 +81,23 @@ as.exchange(oauth2orize.exchange.code(function issue(client, code, redirectURI, 
       secret: 'has a van',
     });
     return cb(null, token);
+  });
+}));
+
+as.grant(oauth2orize.grant.token(function issue(client, user, ares, cb) {
+  var grant = ares.grant;
+  
+  crypto.randomBytes(64, function(err, buffer) {
+    if (err) { return cb(err); }
+    var token = buffer.toString('base64');
+    db.run('INSERT INTO access_tokens (user_id, client_id, token) VALUES (?, ?, ?)', [
+      user.id,
+      client.id,
+      token,
+    ], function(err) {
+      if (err) { return cb(err); }
+      return cb(null, token);
+    });
   });
 }));
 
