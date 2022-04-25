@@ -208,7 +208,7 @@ router.get('/authorize',
         name: row.name,
         redirectURI: row.redirect_uri
       };
-      if (client.redirectURI != redirectURI) { return cb(null, false); }
+      if (client.redirectURI !== redirectURI) { return cb(null, false); }
       return cb(null, client, client.redirectURI);
     });
   }, evaluate),

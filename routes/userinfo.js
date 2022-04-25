@@ -12,7 +12,6 @@ passport.use(new HTTPBearerStrategy(function verify(token, cb) {
   if (jwt.payload.iss !== 'https://server.example.com') { return cb(null, false); }
   if (jwt.payload.aud !== 'https://api.example.com') { return cb(null, false); }
   if (jwt.payload.exp <= now) { return cb(null, false); }
-  
   var ok = jws.verify(token, 'HS256', 'has a van');
   if (!ok) { return cb(null, false); }
   
