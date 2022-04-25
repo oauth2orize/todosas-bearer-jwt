@@ -8,7 +8,7 @@ var db = require('../db');
 var ensureLoggedIn = ensureLogIn();
 
 function fetchClient(req, res, next) {
-  var clientID = (res.locals.grant && res.locals.grant.clientID) || req.body.client_id || req.query.client_id;
+  var clientID = req.query.client_id;
   
   db.get('SELECT * FROM clients WHERE id = ?', [ clientID ], function(err, row) {
     if (err) { return next(err); }
@@ -27,7 +27,7 @@ function fetchGrant(req, res, next) {
   
   db.get('SELECT * FROM grants WHERE id = ?', [ grantID ], function(err, row) {
     if (err) { return next(err); }
-    if (!row) { return next(createError(400, 'Unknown grant "' + grantID + '"')); }
+    if (!row) { return next(createError(404, 'Unknown grant "' + grantID + '"')); }
     var grant = {
       id: row.id,
       userID: row.user_id,
@@ -86,10 +86,23 @@ router.get('/consent/:grantID',
   ensureLoggedIn,
   fetchGrant,
   function authorize(req, res, next) {
-    if (res.locals.grant.id !== req.user.id) { return next(createError(403)); }
+    if (res.locals.grant.userID !== req.user.id) { return next(createError(403)); }
     return next();
   },
-  fetchClient,
+  function resolveClient(req, res, next) {
+    var clientID = res.locals.grant.clientID;
+    
+    db.get('SELECT * FROM clients WHERE id = ?', [ clientID ], function(err, row) {
+      if (err) { return next(err); }
+      if (!row) { return next(createError(500, 'Failed to resolve client "' + clientID + '"')); }
+      var client = {
+        id: row.id,
+        name: row.name
+      };
+      res.locals.client = client;
+      next();
+    });
+  },
   function(req, res, next) {
     res.render('consent', {
       user: req.user,
@@ -104,7 +117,7 @@ router.post('/consent/:grantID',
   ensureLoggedIn,
   fetchGrant,
   function authorize(req, res, next) {
-    if (res.locals.grant.id !== req.user.id) { return next(createError(403)); }
+    if (res.locals.grant.userID !== req.user.id) { return next(createError(403)); }
     return next();
   },
   function(req, res, next) {
@@ -116,7 +129,7 @@ router.post('/consent/:grantID',
       }
     });
     
-    db.run('UPDATE grants SET scope = ? WHERE id = ?', [
+    db.run('UPDATE grants SET scope = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?', [
       grant.scope.join(' '),
       grant.id
     ], function(err) {

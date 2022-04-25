@@ -26,7 +26,9 @@ db.serialize(function() {
     id INTEGER PRIMARY KEY, \
     user_id INTEGER NOT NULL, \
     client_id INTEGER NOT NULL, \
-    scope TEXT \
+    scope TEXT, \
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP, \
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP \
   )");
   
   db.run("CREATE TABLE IF NOT EXISTS authorization_codes ( \
