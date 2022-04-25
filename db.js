@@ -42,15 +42,6 @@ db.serialize(function() {
     code TEXT UNIQUE NOT NULL \
   )");
   
-  db.run("CREATE TABLE IF NOT EXISTS access_tokens ( \
-    user_id INTEGER NOT NULL, \
-    client_id INTEGER NOT NULL, \
-    scope TEXT, \
-    issued_at DATETIME DEFAULT CURRENT_TIMESTAMP, \
-    expires_at DATETIME, \
-    token TEXT UNIQUE NOT NULL \
-  )");
-  
   // create an initial user (username: alice, password: letmein)
   var salt = crypto.randomBytes(16);
   db.run('INSERT OR IGNORE INTO users (username, hashed_password, salt) VALUES (?, ?, ?)', [
