@@ -37,6 +37,7 @@
     "connect-sqlite3": "^0.9.13",
     "cookie-parser": "~1.4.4",
     "csurf": "^1.11.0",
+    "dateformat": "^4.6.3",
     "debug": "~2.6.9",
     "ejs": "~2.6.1",
     "express": "~4.16.1",

@@ -10,6 +10,7 @@ var qs = require('querystring');
 var crypto = require('crypto');
 var jws = require('jws');
 var uuid = require('uuid').v4;
+var dateFormat = require('dateformat');
 var db = require('../db');
 
 
@@ -39,12 +40,14 @@ as.grant(oauth2orize.grant.code(function issue(client, redirectURI, user, ares, 
   crypto.randomBytes(32, function(err, buffer) {
     if (err) { return cb(err); }
     var code = buffer.toString('base64');
-    db.run('INSERT INTO authorization_codes (client_id, redirect_uri, user_id, grant_id, scope, code) VALUES (?, ?, ?, ?, ?, ?)', [
+    var expiresAt = new Date(Date.now() + 600000); // 10 minutes from now
+    db.run('INSERT INTO authorization_codes (client_id, redirect_uri, user_id, grant_id, scope, expires_at, code) VALUES (?, ?, ?, ?, ?, ?, ?)', [
       client.id,
       redirectURI,
       user.id,
       ares.grant.id,
       ares.scope.join(' '),
+      dateFormat(expiresAt, 'yyyy-mm-dd HH:MM:ss', true),
       code
     ], function(err) {
       if (err) { return cb(err); }
@@ -54,6 +57,7 @@ as.grant(oauth2orize.grant.code(function issue(client, redirectURI, user, ares, 
 }));
 
 as.exchange(oauth2orize.exchange.code(function issue(client, code, redirectURI, cb) {
+  var now = Date.now();
   db.get('SELECT * FROM authorization_codes WHERE code = ?', [
     code
   ], function(err, row) {
@@ -61,8 +65,8 @@ as.exchange(oauth2orize.exchange.code(function issue(client, code, redirectURI, 
     if (!row) { return cb(null, false); }
     if (row.client_id !== client.id) { return cb(null, false); }
     if (row.redirect_uri !== redirectURI) { return cb(null, false); }
+    if (Date.parse(row.expires_at + 'Z') <= now) { return cb(null, false); }
     
-    var now = Date.now();
     var token = jws.sign({
       header: {
         alg: 'HS256',
@@ -75,7 +79,7 @@ as.exchange(oauth2orize.exchange.code(function issue(client, code, redirectURI, 
         client_id: String(row.client_id),
         scope: row.scope,
         iat: Math.floor(now / 1000), // now, in seconds
-        exp: Math.floor(now / 1000) + 7200, // 2 hours from now, in seconds
+        exp: Math.floor(now / 1000) + 3600, // 1 hour from now, in seconds
         jti: uuid()
       },
       secret: 'has a van',
